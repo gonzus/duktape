@@ -16,7 +16,7 @@
 #include "duktape.h"
 #include "c_eventloop.h"
 
-#ifndef DUKTAPE_EVENTLOOP_DEBUG
+#if !defined(DUKTAPE_EVENTLOOP_DEBUG)
 #define DUKTAPE_EVENTLOOP_DEBUG 0       /* set to 1 to debug with printf */
 #endif
 
