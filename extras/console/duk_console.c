@@ -13,10 +13,6 @@
 
 /* XXX: Add some form of log level filtering. */
 
-/* XXX: For now logs everything to stdout, V8/Node.js logs debug/info level
- * to stdout, warn and above to stderr.  Should this extra do the same?
- */
-
 /* XXX: Should all output be written via e.g. console.write(formattedMsg)?
  * This would make it easier for user code to redirect all console output
  * to a custom backend.
@@ -25,12 +21,10 @@
 /* XXX: Init console object using duk_def_prop() when that call is available. */
 
 static duk_ret_t duk__console_log_helper(duk_context *ctx, const char *error_name) {
-	duk_idx_t i, n;
-	duk_uint_t flags;
-
-	flags = (duk_uint_t) duk_get_current_magic(ctx);
-
-	n = duk_get_top(ctx);
+	duk_uint_t flags = (duk_uint_t) duk_get_current_magic(ctx);
+	FILE* output = (flags & DUK_CONSOLE_TO_STDERR) ? stderr : stdout;
+	duk_idx_t n = duk_get_top(ctx);
+	duk_idx_t i;
 
 	duk_get_global_string(ctx, "console");
 	duk_get_prop_string(ctx, -1, "format");
@@ -59,9 +53,9 @@ static duk_ret_t duk__console_log_helper(duk_context *ctx, const char *error_nam
 		duk_get_prop_string(ctx, -1, "stack");
 	}
 
-	fprintf(stdout, "%s\n", duk_to_string(ctx, -1));
+	fprintf(output, "%s\n", duk_to_string(ctx, -1));
 	if (flags & DUK_CONSOLE_FLUSH) {
-		fflush(stdout);
+		fflush(output);
 	}
 	return 0;
 }
@@ -133,6 +127,10 @@ void duk_console_init(duk_context *ctx, duk_uint_t flags) {
 	duk__console_reg_vararg_func(ctx, duk__console_log, "debug", flags);  /* alias to console.log */
 	duk__console_reg_vararg_func(ctx, duk__console_trace, "trace", flags);
 	duk__console_reg_vararg_func(ctx, duk__console_info, "info", flags);
+
+    /* from here on, things go to stderr by default */
+    flags |= DUK_CONSOLE_TO_STDERR;
+
 	duk__console_reg_vararg_func(ctx, duk__console_warn, "warn", flags);
 	duk__console_reg_vararg_func(ctx, duk__console_error, "error", flags);
 	duk__console_reg_vararg_func(ctx, duk__console_error, "exception", flags);  /* alias to console.error */
